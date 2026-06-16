@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#efe1bd">
+  <title>甲骨文寻踪 · 排序谜题</title>
+  <style>
+    :root {
+      --ink: #342b22;
+      --muted: #786a56;
+      --paper: #f4e7c5;
+      --paper-light: #fff8e8;
+      --red: #a84130;
+      --red-dark: #762b22;
+      --gold: #d5aa4d;
+      --green: #66754d;
+      --line: rgba(73, 54, 34, .22);
+      --shadow: 0 18px 44px rgba(67, 43, 23, .14);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 15% 12%, rgba(255,255,255,.52), transparent 24%),
+        radial-gradient(circle at 88% 82%, rgba(168,65,48,.09), transparent 28%),
+        repeating-linear-gradient(8deg, rgba(79,56,31,.025) 0 1px, transparent 1px 7px),
+        var(--paper);
+      overflow-x: hidden;
+    }
+
+    button { font: inherit; }
+    button, .glyph-card, .slot { -webkit-tap-highlight-color: transparent; touch-action: none; }
+    :focus-visible { outline: 4px solid rgba(168,65,48,.38); outline-offset: 4px; }
+
+    .page {
+      width: min(1460px, 100%);
+      min-height: 100vh;
+      margin: auto;
+      padding: clamp(16px, 2.3vw, 34px);
+      display: block;
+    }
+
+    .layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(380px, .9fr) minmax(560px, 1.1fr);
+      gap: clamp(18px, 2.8vw, 42px);
+    }
+
+    .story-panel,
+    .puzzle-panel {
+      border: 1px solid var(--line);
+      background: rgba(255, 249, 232, .68);
+      box-shadow: var(--shadow);
+    }
+
+    .story-panel {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(26px, 3.3vw, 50px);
+      border-radius: 5px 30px 5px 30px;
+    }
+
+    .story-panel::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -150px;
+      bottom: -150px;
+      border: 1px solid rgba(168,65,48,.13);
+      border-radius: 50%;
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--red);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .2em;
+    }
+
+    h1 {
+      margin: 0;
+      font: 700 clamp(34px, 4.2vw, 64px)/1.08 "STKaiti", "KaiTi", serif;
+      letter-spacing: .03em;
+    }
+
+    .story-copy {
+      position: relative;
+      z-index: 1;
+      margin: clamp(28px, 4vw, 55px) 0 0;
+      max-width: 560px;
+      color: #574736;
+      font: 700 clamp(21px, 2vw, 30px)/1.95 "STKaiti", "KaiTi", serif;
+    }
+
+    .story-word {
+      position: relative;
+      padding: 0 .14em;
+      color: var(--red-dark);
+      text-shadow: 0 0 14px rgba(213,170,77,.6);
+      border-bottom: 4px solid rgba(213,170,77,.65);
+      animation: word-glow 1.8s ease-in-out infinite;
+    }
+
+    .story-word::after {
+      content: attr(data-step);
+      position: absolute;
+      top: -1.3em;
+      left: 50%;
+      width: 1.7em;
+      height: 1.7em;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: white;
+      background: var(--red);
+      font: 700 .42em/1 sans-serif;
+      transform: translateX(-50%);
+    }
+
+    .story-hint {
+      position: relative;
+      z-index: 1;
+      margin: 32px 0 0;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .puzzle-panel {
+      min-height: 0;
+      padding: clamp(18px, 2.4vw, 34px);
+      border-radius: 28px 5px 28px 5px;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(16px, 2vw, 24px);
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .section-heading h2 {
+      margin: 0 0 6px;
+      font: 700 clamp(24px, 2.7vw, 40px)/1.1 "STKaiti", "KaiTi", serif;
+    }
+
+    .section-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(10px, 1.4vw, 18px);
+    }
+
+    .slot {
+      position: relative;
+      min-height: clamp(178px, 23vw, 245px);
+      padding: 13px;
+      border: 2px dashed rgba(168,65,48,.32);
+      border-radius: 15px;
+      background: rgba(255,255,255,.24);
+      display: grid;
+      place-items: center;
+      transition: border-color .2s, background .2s, transform .2s;
+    }
+
+    .slot::before {
+      content: attr(data-number);
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      color: rgba(52,43,34,.32);
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .slot.over {
+      border-color: var(--red);
+      background: rgba(213,170,77,.16);
+      transform: translateY(-3px);
+    }
+
+    .slot .placeholder {
+      color: rgba(52,43,34,.42);
+      font-size: 13px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .bank-wrap {
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.24);
+    }
+
+    .card-bank {
+      min-height: 150px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: clamp(10px, 1.2vw, 16px);
+    }
+
+    .glyph-card {
+      min-width: 0;
+      min-height: 130px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: #453426;
+      background: var(--paper-light);
+      box-shadow: 0 8px 18px rgba(65,42,22,.1);
+      cursor: grab;
+      user-select: none;
+      display: grid;
+      place-items: center;
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+    }
+
+    .glyph-card:hover { transform: translateY(-4px); box-shadow: 0 14px 25px rgba(65,42,22,.15); }
+    .glyph-card.dragging { opacity: .45; transform: scale(.96); cursor: grabbing; }
+    .glyph-card.touch-dragging {
+      position: fixed;
+      z-index: 30;
+      width: var(--drag-width);
+      left: 0;
+      top: 0;
+      opacity: .92;
+      pointer-events: none;
+      transform: translate(calc(var(--drag-x) - 50%), calc(var(--drag-y) - 50%)) scale(1.04);
+      box-shadow: 0 20px 38px rgba(65,42,22,.24);
+    }
+
+    .glyph-card svg {
+      width: 100%;
+      max-width: 120px;
+      height: 95px;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .glyph-card path,
+    .glyph-card circle {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .actions {
+      margin-top: auto;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .feedback {
+      min-height: 54px;
+      padding: 11px 14px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      color: var(--muted);
+      background: rgba(255,249,232,.5);
+      display: flex;
+      align-items: center;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .feedback.error {
+      color: var(--red-dark);
+      border-color: rgba(168,65,48,.25);
+      background: rgba(168,65,48,.08);
+    }
+
+    .feedback.success {
+      color: #4d6239;
+      border-color: rgba(102,117,77,.35);
+      background: rgba(102,117,77,.12);
+    }
+
+    .button {
+      min-height: 54px;
+      padding: 0 20px;
+      border-radius: 7px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      cursor: pointer;
+    }
+
+    .submit {
+      border: 0;
+      color: #fff9e8;
+      background: var(--red);
+      box-shadow: 4px 5px 0 var(--red-dark);
+    }
+
+    .reset {
+      border: 1px solid var(--line);
+      color: var(--red-dark);
+      background: transparent;
+    }
+
+    .result {
+      display: none;
+      padding: 16px 18px;
+      border-radius: 12px;
+      color: #4d6239;
+      background: rgba(102,117,77,.12);
+      line-height: 1.7;
+    }
+
+    .result.show { display: block; animation: ink-in .4s both; }
+
+    .modern-order {
+      margin-top: 8px;
+      color: var(--red-dark);
+      font: 700 24px/1.4 "STKaiti", "KaiTi", serif;
+      letter-spacing: .16em;
+    }
+
+    @keyframes word-glow { 50% { background: rgba(213,170,77,.25); } }
+    @keyframes ink-in { from { opacity: 0; transform: translateY(8px); } }
+
+    @media (max-width: 980px), (orientation: portrait) {
+      .layout { grid-template-columns: 1fr; }
+      .story-panel { min-height: auto; }
+    }
+
+    @media (max-width: 680px) {
+      .page { padding: 13px; }
+      .slots, .card-bank { grid-template-columns: repeat(2, 1fr); }
+      .actions { grid-template-columns: 1fr; }
+      .button { width: 100%; }
+      .story-copy { font-size: 21px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="layout">
+      <article class="story-panel">
+        <p class="eyebrow">故事线索</p>
+        <p class="story-copy">
+          一个古代小<span class="story-word" data-step="1">人</span>抬头看见<span class="story-word" data-step="2">日</span>光，
+          向前行走，经过高低起伏的<span class="story-word" data-step="3">山</span>，
+          最后在一棵<span class="story-word" data-step="4">木</span>下找到了隐藏线索。
+        </p>
+        <p class="story-hint">
+          亮起来的是普通汉字提示，不是答案卡。请根据这些提示，推测右侧甲骨文的正确顺序。
+        </p>
+      </article>
+
+      <section class="puzzle-panel" aria-labelledby="puzzleTitle">
+        <div class="section-heading">
+          <div>
+            <h2 id="puzzleTitle">排序区</h2>
+            <p>把下方字卡拖进 1、2、3、4 四个位置。</p>
+          </div>
+        </div>
+
+        <div class="slots" id="slots" aria-label="甲骨文排序位置">
+          <div class="slot" data-slot="0" data-number="01"><span class="placeholder">第一个<br>故事从谁开始？</span></div>
+          <div class="slot" data-slot="1" data-number="02"><span class="placeholder">第二个<br>他看见什么？</span></div>
+          <div class="slot" data-slot="2" data-number="03"><span class="placeholder">第三个<br>经过哪里？</span></div>
+          <div class="slot" data-slot="3" data-number="04"><span class="placeholder">第四个<br>线索在哪里？</span></div>
+        </div>
+
+        <section class="bank-wrap">
+          <div class="card-bank" id="cardBank" aria-label="可拖动的甲骨文字卡"></div>
+        </section>
+
+        <div class="result" id="result">
+          <strong>破解成功！</strong>
+          <div class="modern-order">人 → 日 → 山 → 木</div>
+          <div>完整故事：一个古代小人抬头看见日光，向前行走，经过山，最后在木下找到了隐藏线索。</div>
+        </div>
+
+        <div class="actions">
+          <div class="feedback" id="feedback" aria-live="assertive">先把四张甲骨文字卡拖进排序区。</div>
+          <button class="button reset" id="resetButton" type="button">重排</button>
+          <button class="button submit" id="submitButton" type="button">提交</button>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const glyphs = [
+      {
+        id: "person",
+        label: "人",
+        svg: '<svg viewBox="0 0 160 180" aria-hidden="true"><path d="M65 24 Q80 43 78 70 Q75 96 62 123 Q52 144 43 159"/><path d="M78 68 Q99 95 119 126 Q128 139 139 151"/><path d="M74 72 Q56 91 42 107"/><path d="M83 72 Q104 83 116 96"/></svg>'
+      },
+      {
+        id: "sun",
+        label: "日",
+        svg: '<svg viewBox="0 0 160 180" aria-hidden="true"><path d="M40 40 Q78 22 118 40 Q137 83 119 137 Q80 154 40 137 Q22 87 40 40 Z"/><circle cx="80" cy="87" r="5"/></svg>'
+      },
+      {
+        id: "mountain",
+        label: "山",
+        svg: '<svg viewBox="0 0 160 180" aria-hidden="true"><path d="M23 139 Q31 93 41 51 Q50 93 56 120 Q69 79 82 30 Q96 84 103 124 Q118 83 129 60 Q138 109 139 141"/><path d="M22 140 Q79 147 140 140"/></svg>'
+      },
+      {
+        id: "tree",
+        label: "木",
+        svg: '<svg viewBox="0 0 160 180" aria-hidden="true"><path d="M80 24 Q78 90 80 157"/><path d="M79 58 Q54 72 34 96"/><path d="M80 59 Q106 73 129 96"/><path d="M79 101 Q58 124 43 151"/><path d="M81 101 Q105 124 121 151"/></svg>'
+      }
+    ];
+
+    const correctOrder = ["person", "sun", "mountain", "tree"];
+    const cardBank = document.getElementById("cardBank");
+    const slots = [...document.querySelectorAll(".slot")];
+    const feedback = document.getElementById("feedback");
+    const result = document.getElementById("result");
+    const submitButton = document.getElementById("submitButton");
+    const resetButton = document.getElementById("resetButton");
+    let draggedCard = null;
+    let pointerCard = null;
+    let pointerMoved = false;
+    let pointerStart = null;
+
+    function shuffledGlyphs() {
+      let shuffled;
+      do {
+        shuffled = [...glyphs].sort(() => Math.random() - 0.5);
+      } while (shuffled.every((glyph, index) => glyph.id === correctOrder[index]));
+      return shuffled;
+    }
+
+    function createCard(glyph) {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "glyph-card";
+      card.draggable = true;
+      card.dataset.id = glyph.id;
+      card.setAttribute("aria-label", `${glyph.label}的甲骨文字卡，可拖动排序`);
+      card.innerHTML = glyph.svg;
+      card.addEventListener("dragstart", handleDragStart);
+      card.addEventListener("dragend", handleDragEnd);
+      card.addEventListener("pointerdown", handlePointerDown);
+      card.addEventListener("pointermove", handlePointerMove);
+      card.addEventListener("pointerup", handlePointerUp);
+      card.addEventListener("pointercancel", handlePointerCancel);
+      return card;
+    }
+
+    function renderCards() {
+      cardBank.innerHTML = "";
+      slots.forEach(slot => resetSlot(slot));
+      shuffledGlyphs().forEach(glyph => cardBank.appendChild(createCard(glyph)));
+      result.classList.remove("show");
+      feedback.className = "feedback";
+      feedback.textContent = "先把四张甲骨文字卡拖进排序区。";
+    }
+
+    function resetSlot(slot) {
+      const index = Number(slot.dataset.slot);
+      slot.innerHTML = `<span class="placeholder">${slotText(index)}</span>`;
+      slot.classList.remove("over");
+    }
+
+    function slotText(index) {
+      return [
+        "第一个<br>故事从谁开始？",
+        "第二个<br>他看见什么？",
+        "第三个<br>经过哪里？",
+        "第四个<br>线索在哪里？"
+      ][index];
+    }
+
+    function handleDragStart(event) {
+      draggedCard = event.currentTarget;
+      event.currentTarget.classList.add("dragging");
+      event.dataTransfer.setData("text/plain", event.currentTarget.dataset.id);
+      event.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragEnd(event) {
+      event.currentTarget.classList.remove("dragging");
+      slots.forEach(slot => slot.classList.remove("over"));
+      draggedCard = null;
+    }
+
+    function handlePointerDown(event) {
+      if (event.button > 0) return;
+      pointerCard = event.currentTarget;
+      pointerMoved = false;
+      pointerStart = { x: event.clientX, y: event.clientY };
+      pointerCard.setPointerCapture(event.pointerId);
+    }
+
+    function handlePointerMove(event) {
+      if (pointerCard !== event.currentTarget || !pointerStart) return;
+      const distance = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
+      if (!pointerMoved && distance < 8) return;
+      if (!pointerMoved) {
+        pointerMoved = true;
+        const rect = pointerCard.getBoundingClientRect();
+        pointerCard.style.setProperty("--drag-width", `${rect.width}px`);
+        pointerCard.classList.add("touch-dragging");
+      }
+      pointerCard.style.setProperty("--drag-x", `${event.clientX}px`);
+      pointerCard.style.setProperty("--drag-y", `${event.clientY}px`);
+      document.querySelectorAll(".slot.over").forEach(slot => slot.classList.remove("over"));
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".slot");
+      if (target) target.classList.add("over");
+    }
+
+    function handlePointerUp(event) {
+      if (pointerCard !== event.currentTarget) return;
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".slot, .card-bank");
+      if (pointerMoved && target) {
+        if (target.classList.contains("slot")) placeCard(target, pointerCard);
+        if (target.classList.contains("card-bank")) {
+          const oldParent = pointerCard.parentElement;
+          cardBank.appendChild(pointerCard);
+          if (oldParent.classList.contains("slot")) resetSlot(oldParent);
+          feedback.className = "feedback";
+          feedback.textContent = "字卡已放回选择区。";
+        }
+      }
+      clearPointerDrag();
+    }
+
+    function handlePointerCancel() {
+      clearPointerDrag();
+    }
+
+    function clearPointerDrag() {
+      pointerCard?.classList.remove("touch-dragging");
+      pointerCard?.style.removeProperty("--drag-width");
+      pointerCard?.style.removeProperty("--drag-x");
+      pointerCard?.style.removeProperty("--drag-y");
+      document.querySelectorAll(".slot.over").forEach(slot => slot.classList.remove("over"));
+      pointerCard = null;
+      pointerMoved = false;
+      pointerStart = null;
+    }
+
+    function placeCard(slot, card) {
+      const oldCard = slot.querySelector(".glyph-card");
+      const oldParent = card.parentElement;
+      if (oldCard && oldCard !== card) {
+        oldParent.appendChild(oldCard);
+      }
+      slot.innerHTML = "";
+      slot.appendChild(card);
+      if (oldParent.classList.contains("slot") && oldParent !== slot && !oldCard) {
+        resetSlot(oldParent);
+      }
+      feedback.className = "feedback";
+      feedback.textContent = "很好，继续根据故事调整顺序。";
+    }
+
+    slots.forEach(slot => {
+      slot.addEventListener("dragover", event => {
+        event.preventDefault();
+        slot.classList.add("over");
+      });
+      slot.addEventListener("dragleave", () => slot.classList.remove("over"));
+      slot.addEventListener("drop", event => {
+        event.preventDefault();
+        slot.classList.remove("over");
+        if (!draggedCard) return;
+        placeCard(slot, draggedCard);
+      });
+    });
+
+    cardBank.addEventListener("dragover", event => event.preventDefault());
+    cardBank.addEventListener("drop", event => {
+      event.preventDefault();
+      if (!draggedCard) return;
+      const oldParent = draggedCard.parentElement;
+      cardBank.appendChild(draggedCard);
+      if (oldParent.classList.contains("slot")) resetSlot(oldParent);
+      feedback.className = "feedback";
+      feedback.textContent = "字卡已放回选择区。";
+    });
+
+    submitButton.addEventListener("click", () => {
+      const order = slots.map(slot => slot.querySelector(".glyph-card")?.dataset.id || "");
+      if (order.some(id => !id)) {
+        feedback.className = "feedback error";
+        feedback.textContent = "还有空位没有放入字卡。";
+        return;
+      }
+      const isCorrect = order.every((id, index) => id === correctOrder[index]);
+      if (isCorrect) {
+        feedback.className = "feedback success";
+        feedback.textContent = "破解成功！你读懂了故事顺序。";
+        result.classList.add("show");
+      } else {
+        feedback.className = "feedback error";
+        feedback.textContent = "先找一找故事中的主人公是谁。";
+        result.classList.remove("show");
+      }
+    });
+
+    resetButton.addEventListener("click", renderCards);
+    renderCards();
+  </script>
+</body>
+</html>
